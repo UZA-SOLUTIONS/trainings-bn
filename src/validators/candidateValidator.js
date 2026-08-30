@@ -1,0 +1,71 @@
+import { z } from "zod";
+
+const objectId = z
+  .string()
+  .regex(/^[a-fA-F0-9]{24}$/, { message: "Choose a cohort" });
+
+export const createCandidateSchema = z.object({
+  cohort_id: objectId,
+  full_name: z.string().trim().min(2).max(120),
+  national_id: z.string().trim().min(5).max(32),
+  date_of_birth: z.string().min(1),
+  gender: z.string().min(1),
+  phone: z.string().trim().min(9).max(20),
+  email: z.string().trim().email().max(255).or(z.literal("")).optional().nullable(),
+  district: z.string().trim().min(2).max(60),
+  sector: z.string().trim().max(60).optional().default(""),
+  cell: z.string().trim().max(60).optional().default(""),
+  education_level: z.string().max(60).optional().default(""),
+  preferred_language: z.string().max(40).optional().default("Kinyarwanda"),
+  has_smartphone: z.boolean().optional().default(false),
+  driving_license_number: z.string().trim().min(3).max(40),
+  license_categories: z.string().trim().max(40).optional().default(""),
+  license_issue_date: z.string().optional().nullable(),
+  years_driving_experience: z.coerce.number().min(0).max(60),
+  taxi_association: z.string().trim().max(120).optional().default(""),
+  current_vehicle_plate: z.string().trim().max(20).optional().default(""),
+  currently_driving_for: z.string().trim().max(120).optional().default(""),
+  previously_drove_for_service: z.boolean().optional().default(false),
+  monthly_income_rwf: z.coerce.number().min(0),
+  average_daily_earnings_rwf: z.coerce.number().min(0),
+  has_bank_account: z.boolean().optional().default(false),
+  bank_name: z.string().trim().max(80).optional().default(""),
+  bank_account_number: z.string().trim().max(40).optional().default(""),
+  has_existing_loan: z.boolean().optional().default(false),
+  existing_loan_details: z.string().trim().max(300).optional().default(""),
+  deposit_available_rwf: z.coerce.number().min(0),
+  needs_uza_access_support: z.boolean().optional().default(false),
+  preferred_term_years: z.coerce.number().min(1).max(5),
+  preferred_financing: z.string().max(60).optional().default("Bank financed"),
+  next_of_kin_name: z.string().trim().max(120).optional().default(""),
+  next_of_kin_phone: z.string().trim().max(20).optional().default(""),
+  next_of_kin_relationship: z.string().trim().max(60).optional().default(""),
+  guarantor_name: z.string().trim().max(120).optional().default(""),
+  guarantor_phone: z.string().trim().max(20).optional().default(""),
+  guarantor_occupation: z.string().trim().max(80).optional().default(""),
+  marital_status: z.string().min(1),
+  spouse_name: z.string().trim().max(120).optional().default(""),
+  is_cooperative_member: z.boolean().optional().default(false),
+  cooperative_name: z.string().trim().max(120).optional().default(""),
+  target_vehicle_price_rwf: z.coerce.number().min(0).optional().default(0),
+  offers_collateral: z.boolean().optional().default(false),
+  collateral_description: z.string().trim().max(300).optional().default(""),
+  collateral_value_rwf: z.coerce.number().min(0).optional().default(0),
+  listed_on_crb: z.boolean().optional().default(false),
+  crb_resolution_notes: z.string().trim().max(300).optional().default(""),
+  other_loan_bank: z.string().trim().max(120).optional().default(""),
+  other_loan_repayment_source: z.string().trim().max(300).optional().default(""),
+});
+
+export const updateCandidateSchema = z
+  .object({
+    status: z.enum(["enrolled", "waitlisted", "rejected", "withdrawn", "graduated"]).optional(),
+    training_status: z
+      .enum(["not_started", "in_progress", "completed", "failed"])
+      .optional(),
+    instructor_notes: z.string().max(2000).optional().nullable(),
+    attendance_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
+    exam_score: z.coerce.number().min(0).max(100).optional().nullable(),
+    disqualification_reason: z.string().max(500).optional().nullable(),
+  })
+  .passthrough();
