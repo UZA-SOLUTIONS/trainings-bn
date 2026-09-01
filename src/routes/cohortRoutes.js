@@ -7,8 +7,8 @@ import { createCohortSchema, updateCohortSchema } from "../validators/cohortVali
 const router = Router();
 
 router.get("/", optionalAuthenticate, cohortController.list);
-router.get("/overview", authenticate, cohortController.overview);
-router.get("/:id", authenticate, cohortController.getOne);
+router.get("/overview", authenticate, authorizeRoles("admin", "instructor", "bank_partner"), cohortController.overview);
+router.get("/:id", authenticate, authorizeRoles("admin", "instructor"), cohortController.getOne);
 router.post(
   "/",
   authenticate,

@@ -10,6 +10,7 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("1h"),
+  SEED_STAFF_PASSWORD: z.string().min(6).default("ChangeMe123!"),
 });
 
 const parsed = envSchema.safeParse(process.env);

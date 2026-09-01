@@ -10,6 +10,12 @@ const cohortSchema = new mongoose.Schema(
     end_date: { type: String, default: null },
     applications_open: { type: Boolean, default: true },
     partner_bank: { type: String, default: null },
+    institution_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FinancingInstitution",
+      default: null,
+      index: true,
+    },
     notes: { type: String, default: null },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },

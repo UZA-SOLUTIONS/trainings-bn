@@ -4,6 +4,8 @@ const objectId = z
   .string()
   .regex(/^[a-fA-F0-9]{24}$/, { message: "Choose a cohort" });
 
+const docField = z.boolean().optional();
+
 export const createCandidateSchema = z.object({
   cohort_id: objectId,
   full_name: z.string().trim().min(2).max(120),
@@ -57,15 +59,43 @@ export const createCandidateSchema = z.object({
   other_loan_repayment_source: z.string().trim().max(300).optional().default(""),
 });
 
-export const updateCandidateSchema = z
-  .object({
-    status: z.enum(["enrolled", "waitlisted", "rejected", "withdrawn", "graduated"]).optional(),
-    training_status: z
-      .enum(["not_started", "in_progress", "completed", "failed"])
-      .optional(),
-    instructor_notes: z.string().max(2000).optional().nullable(),
-    attendance_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
-    exam_score: z.coerce.number().min(0).max(100).optional().nullable(),
-    disqualification_reason: z.string().max(500).optional().nullable(),
-  })
-  .passthrough();
+export const updateCandidateSchema = z.object({
+  status: z.enum(["enrolled", "waitlisted", "rejected", "withdrawn", "graduated"]).optional(),
+  training_status: z
+    .enum(["not_started", "in_progress", "completed", "failed"])
+    .optional(),
+  instructor_notes: z.string().max(2000).optional().nullable(),
+  attendance_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
+  exam_score: z.coerce.number().min(0).max(100).optional().nullable(),
+  disqualification_reason: z.string().max(500).optional().nullable(),
+  doc_national_id: docField,
+  doc_spouse_id: docField,
+  doc_loan_application_letter: docField,
+  doc_tax_clearance: docField,
+  doc_marital_status_proof: docField,
+  doc_proforma_invoice: docField,
+  doc_deposit_proof: docField,
+  doc_momo_statement: docField,
+  doc_yego_history: docField,
+  doc_cooperative_letter: docField,
+  doc_driving_license: docField,
+  doc_previous_vehicle_docs: docField,
+  doc_two_passport_photos: docField,
+  doc_passport_photo: docField,
+  doc_criminal_record: docField,
+  doc_proof_of_residence: docField,
+  doc_bank_statement: docField,
+  doc_medical_certificate: docField,
+  crb_resolution_notes: z.string().max(300).optional().nullable(),
+  loan_review_status: z
+    .enum([
+      "not_ready",
+      "pending",
+      "in_review",
+      "approved",
+      "declined",
+      "more_info_needed",
+    ])
+    .optional(),
+  bank_notes: z.string().max(2000).optional().nullable(),
+});

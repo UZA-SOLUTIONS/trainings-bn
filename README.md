@@ -29,6 +29,20 @@ npm run dev
 
 On first start, default cohorts and financing institutions are seeded automatically if the database is empty.
 
+On every start, default **staff accounts** are created when their email is not already in the database (existing users are never overwritten).
+
+### Default staff (seed)
+
+| Role | Email | Password |
+|------|-------|------------|
+| Admin | `admin@uza.rw` | `SEED_STAFF_PASSWORD` (default `ChangeMe123!`) |
+| Instructor | `instructor@uza.rw` | same |
+| Bank partner | `partner@unguka.rw` | same (scoped to Unguka Bank) |
+
+If you already created an admin via signup, that account remains. The seeded admin is only added when `admin@uza.rw` does not exist yet.
+
+Sign in at the frontend `/auth` page with any of the accounts above.
+
 ## Environment
 
 | Variable | Purpose |
@@ -38,6 +52,7 @@ On first start, default cohorts and financing institutions are seeded automatica
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_EXPIRES_IN` | e.g. `1h` |
+| `SEED_STAFF_PASSWORD` | Password for default seed staff accounts |
 | `NODE_ENV` | `development` / `production` |
 
 ## Example MongoDB URIs

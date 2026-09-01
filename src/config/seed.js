@@ -1,5 +1,31 @@
+import bcrypt from "bcryptjs";
 import { Cohort } from "../models/Cohort.js";
 import { FinancingInstitution } from "../models/FinancingInstitution.js";
+import { StaffUser } from "../models/StaffUser.js";
+import { env } from "./env.js";
+import { migrateInstitutionLinks } from "./migrate.js";
+import { seedConsentsForInstitution } from "../services/lenderFileService.js";
+
+const DEFAULT_STAFF = [
+  {
+    email: "admin@uza.rw",
+    full_name: "UZA Programme Admin",
+    role: "admin",
+    institution_code: null,
+  },
+  {
+    email: "instructor@uza.rw",
+    full_name: "Tunga Taxi Instructor",
+    role: "instructor",
+    institution_code: null,
+  },
+  {
+    email: "partner@unguka.rw",
+    full_name: "Unguka Bank Partner",
+    role: "bank_partner",
+    institution_code: "UNGUKA",
+  },
+];
 
 const DEFAULT_COHORTS = [
   {
@@ -110,15 +136,73 @@ const DEFAULT_INSTITUTIONS = [
 
 /** Seeds default cohorts and banks once when collections are empty. */
 export async function seedIfEmpty() {
-  const cohortCount = await Cohort.countDocuments();
-  if (cohortCount === 0) {
-    await Cohort.insertMany(DEFAULT_COHORTS);
-    console.log(`Seeded ${DEFAULT_COHORTS.length} cohorts`);
-  }
+  let ungukaId = null;
 
   const institutionCount = await FinancingInstitution.countDocuments();
   if (institutionCount === 0) {
-    await FinancingInstitution.insertMany(DEFAULT_INSTITUTIONS);
+    const inserted = await FinancingInstitution.insertMany(DEFAULT_INSTITUTIONS);
     console.log(`Seeded ${DEFAULT_INSTITUTIONS.length} financing institutions`);
+    ungukaId = inserted.find((i) => i.code === "UNGUKA")?._id ?? null;
+  } else {
+    const unguka = await FinancingInstitution.findOne({ code: "UNGUKA" }).lean();
+    ungukaId = unguka?._id ?? null;
+  }
+
+  const cohortCount = await Cohort.countDocuments();
+  if (cohortCount === 0) {
+    const cohorts = DEFAULT_COHORTS.map((c) => ({
+      ...c,
+      institution_id:
+        c.partner_bank === "Unguka Bank" && ungukaId ? ungukaId : null,
+    }));
+    await Cohort.insertMany(cohorts);
+    console.log(`Seeded ${DEFAULT_COHORTS.length} cohorts`);
+  }
+
+  await migrateInstitutionLinks();
+  await seedStaffIfMissing(ungukaId);
+
+  if (ungukaId) {
+    const consents = await seedConsentsForInstitution(ungukaId);
+    if (consents > 0) {
+      console.log(`Seeded ${consents} borrower–lender consent record(s) for Unguka Bank`);
+    }
+  }
+}
+
+/** Creates default staff accounts when their email is not already taken. */
+export async function seedStaffIfMissing(ungukaId) {
+  const password_hash = await bcrypt.hash(env.SEED_STAFF_PASSWORD, 12);
+  let created = 0;
+
+  for (const entry of DEFAULT_STAFF) {
+    const email = entry.email.toLowerCase().trim();
+    const existing = await StaffUser.findOne({ email }).lean();
+    if (existing) continue;
+
+    let institution_id = null;
+    if (entry.role === "bank_partner") {
+      if (!ungukaId) {
+        console.warn(
+          `Skipped seed staff ${email}: Unguka institution not found for bank_partner`,
+        );
+        continue;
+      }
+      institution_id = ungukaId;
+    }
+
+    await StaffUser.create({
+      email,
+      password_hash,
+      full_name: entry.full_name,
+      role: entry.role,
+      institution_id,
+    });
+    console.log(`Seeded staff: ${email} (${entry.role})`);
+    created += 1;
+  }
+
+  if (created === 0) {
+    console.log("Staff seed: all default accounts already exist");
   }
 }

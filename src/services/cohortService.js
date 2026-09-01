@@ -2,26 +2,48 @@ import mongoose from "mongoose";
 import { Cohort } from "../models/Cohort.js";
 import { AppError } from "../utils/errors.js";
 import { toJSON, toJSONList } from "../utils/serialize.js";
+import { assertCohortAccess, cohortIdsForUser } from "../utils/permissions.js";
 
-export async function listCohorts({ openOnly = false } = {}) {
+async function buildCohortFilter(user, { openOnly = false } = {}) {
   const filter = openOnly ? { applications_open: true } : {};
-  const cohorts = await Cohort.find(filter).sort({ start_date: 1 });
-  return toJSONList(cohorts);
+
+  const scopedCohortIds = await cohortIdsForUser(user);
+  if (scopedCohortIds !== null) {
+    filter._id = { $in: scopedCohortIds.map((id) => new mongoose.Types.ObjectId(id)) };
+  }
+
+  return filter;
 }
 
-export async function getCohortById(id) {
+export async function listCohorts(user, { openOnly = false } = {}) {
+  const filter = await buildCohortFilter(user, { openOnly });
+  const cohorts = await Cohort.find(filter).sort({ start_date: 1 });
+  return toJSONList(cohorts).map((c) => ({
+    ...c,
+    institution_id: c.institution_id ? String(c.institution_id) : null,
+  }));
+}
+
+export async function getCohortById(user, id) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Cohort not found", 404, "NOT_FOUND");
   }
+
+  await assertCohortAccess(user, id);
+
   const cohort = await Cohort.findById(id);
   if (!cohort) throw new AppError("Cohort not found", 404, "NOT_FOUND");
-  return toJSON(cohort);
+  const json = toJSON(cohort);
+  json.institution_id = json.institution_id ? String(json.institution_id) : null;
+  return json;
 }
 
 export async function createCohort(payload) {
   try {
     const cohort = await Cohort.create(payload);
-    return toJSON(cohort);
+    const json = toJSON(cohort);
+    json.institution_id = json.institution_id ? String(json.institution_id) : null;
+    return json;
   } catch (err) {
     if (err.code === 11000) {
       throw new AppError("A cohort with this code already exists", 409, "DUPLICATE_CODE");
@@ -39,5 +61,7 @@ export async function updateCohort(id, payload) {
     runValidators: true,
   });
   if (!cohort) throw new AppError("Cohort not found", 404, "NOT_FOUND");
-  return toJSON(cohort);
+  const json = toJSON(cohort);
+  json.institution_id = json.institution_id ? String(json.institution_id) : null;
+  return json;
 }

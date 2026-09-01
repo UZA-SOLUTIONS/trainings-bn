@@ -4,10 +4,24 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
 import { errorMiddleware, notFoundMiddleware } from "./middleware/errorMiddleware.js";
+import * as candidateController from "./controllers/candidateController.js";
 import authRoutes from "./routes/authRoutes.js";
 import cohortRoutes from "./routes/cohortRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import institutionRoutes from "./routes/institutionRoutes.js";
+import lenderRoutes from "./routes/lenderRoutes.js";
+
+const trackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many lookups. Try again in a few minutes.",
+    error: "RATE_LIMITED",
+  },
+});
 
 export function createApp() {
   const app = express();
@@ -43,8 +57,10 @@ export function createApp() {
 
   app.use("/api/auth", authRoutes);
   app.use("/api/cohorts", cohortRoutes);
+  app.get("/api/candidates/track/:code", trackLimiter, candidateController.track);
   app.use("/api/candidates", candidateRoutes);
   app.use("/api/institutions", institutionRoutes);
+  app.use("/api/financing/lenders", lenderRoutes);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

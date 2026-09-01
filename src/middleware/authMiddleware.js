@@ -14,6 +14,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      institution_id: payload.institution_id ?? null,
     };
     next();
   } catch {
@@ -32,6 +33,7 @@ export const optionalAuthenticate = asyncHandler(async (req, res, next) => {
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      institution_id: payload.institution_id ?? null,
     };
   } catch {
     // ignore invalid optional token

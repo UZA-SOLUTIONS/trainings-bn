@@ -62,6 +62,19 @@ const candidateSchema = new mongoose.Schema(
     collateral_value_rwf: { type: Number, default: 0 },
     listed_on_crb: { type: Boolean, default: false },
     crb_resolution_notes: { type: String, default: "" },
+    loan_review_status: {
+      type: String,
+      enum: [
+        "not_ready",
+        "pending",
+        "in_review",
+        "approved",
+        "declined",
+        "more_info_needed",
+      ],
+      default: "not_ready",
+    },
+    bank_notes: { type: String, default: null },
     other_loan_bank: { type: String, default: "" },
     other_loan_repayment_source: { type: String, default: "" },
 

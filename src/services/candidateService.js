@@ -2,8 +2,14 @@ import mongoose from "mongoose";
 import { Candidate } from "../models/Candidate.js";
 import { Cohort } from "../models/Cohort.js";
 import { formatCandidateCode, nextCandidateSequence } from "../models/Counter.js";
+import { buildCandidateTrackView } from "./candidateTrackService.js";
 import { AppError } from "../utils/errors.js";
 import { toJSON, toJSONList } from "../utils/serialize.js";
+import {
+  assertCandidateAccess,
+  cohortIdsForUser,
+  filterCandidatePatch,
+} from "../utils/permissions.js";
 
 async function assignSeat(cohort) {
   const taken = await Candidate.countDocuments({
@@ -53,6 +59,27 @@ async function promoteWaitlist(cohortId) {
   }
 }
 
+async function buildListFilter(user, { cohortId } = {}) {
+  const filter = {};
+
+  if (cohortId) {
+    if (!mongoose.isValidObjectId(cohortId)) return { impossible: true };
+    filter.cohort_id = cohortId;
+  }
+
+  const scopedCohortIds = await cohortIdsForUser(user);
+  if (scopedCohortIds !== null) {
+    if (cohortId && !scopedCohortIds.includes(String(cohortId))) {
+      return { impossible: true };
+    }
+    if (!cohortId) {
+      filter.cohort_id = { $in: scopedCohortIds.map((id) => new mongoose.Types.ObjectId(id)) };
+    }
+  }
+
+  return filter;
+}
+
 export async function createCandidate(payload) {
   if (!mongoose.isValidObjectId(payload.cohort_id)) {
     throw new AppError("Cohort not found", 404, "NOT_FOUND");
@@ -94,12 +121,9 @@ export async function createCandidate(payload) {
   }
 }
 
-export async function listCandidates({ cohortId } = {}) {
-  const filter = {};
-  if (cohortId) {
-    if (!mongoose.isValidObjectId(cohortId)) return [];
-    filter.cohort_id = cohortId;
-  }
+export async function listCandidates(user, { cohortId } = {}) {
+  const filter = await buildListFilter(user, { cohortId });
+  if (filter.impossible) return [];
 
   const candidates = await Candidate.find(filter).sort({
     waitlist_position: 1,
@@ -112,7 +136,7 @@ export async function listCandidates({ cohortId } = {}) {
   }));
 }
 
-export async function updateCandidate(id, patch) {
+export async function updateCandidate(user, id, patch) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Candidate not found", 404, "NOT_FOUND");
   }
@@ -120,8 +144,11 @@ export async function updateCandidate(id, patch) {
   const existing = await Candidate.findById(id);
   if (!existing) throw new AppError("Candidate not found", 404, "NOT_FOUND");
 
+  await assertCandidateAccess(user, existing);
+
+  const filteredPatch = filterCandidatePatch(user, patch);
   const previousStatus = existing.status;
-  Object.assign(existing, patch);
+  Object.assign(existing, filteredPatch);
   await existing.save();
 
   if (
@@ -136,9 +163,12 @@ export async function updateCandidate(id, patch) {
   return json;
 }
 
-export async function listCandidatesSummary() {
-  const candidates = await Candidate.find({})
-    .select("cohort_id status training_status")
+export async function listCandidatesSummary(user) {
+  const filter = await buildListFilter(user, {});
+  if (filter.impossible) return [];
+
+  const candidates = await Candidate.find(filter)
+    .select("cohort_id status training_status loan_review_status listed_on_crb")
     .lean();
 
   return candidates.map((c) => ({
@@ -146,5 +176,31 @@ export async function listCandidatesSummary() {
     cohort_id: String(c.cohort_id),
     status: c.status,
     training_status: c.training_status,
+    loan_review_status: c.loan_review_status,
+    listed_on_crb: c.listed_on_crb,
   }));
+}
+
+const CANDIDATE_CODE_RE = /^UZA-\d{4}-\d{5}$/;
+
+export async function trackCandidateByCode(rawCode) {
+  const code = String(rawCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!CANDIDATE_CODE_RE.test(code)) {
+    throw new AppError(
+      "Enter a valid candidate ID (example: UZA-2026-00001).",
+      400,
+      "INVALID_CODE",
+    );
+  }
+
+  const candidate = await Candidate.findOne({ candidate_code: code }).lean();
+  if (!candidate) {
+    throw new AppError("No application found for that candidate ID.", 404, "NOT_FOUND");
+  }
+
+  const cohort = await Cohort.findById(candidate.cohort_id).lean();
+  return buildCandidateTrackView(candidate, cohort);
 }

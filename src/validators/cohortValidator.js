@@ -7,6 +7,11 @@ export const createCohortSchema = z.object({
   location: z.string().trim().max(120).optional().nullable(),
   start_date: z.string().optional().nullable(),
   partner_bank: z.string().trim().max(80).optional().nullable(),
+  institution_id: z
+    .string()
+    .regex(/^[a-fA-F0-9]{24}$/)
+    .optional()
+    .nullable(),
   applications_open: z.boolean().optional(),
   notes: z.string().trim().max(500).optional().nullable(),
 });
