@@ -2,8 +2,9 @@ import * as courseService from "../services/courseService.js";
 import { success } from "../utils/response.js";
 import { asyncHandler } from "../utils/errors.js";
 
-export const list = asyncHandler(async (_req, res) => {
-  const courses = await courseService.listCourses();
+export const list = asyncHandler(async (req, res) => {
+  const activeOnly = !req.user || req.query.active === "true";
+  const courses = await courseService.listCourses({ activeOnly });
   return success(res, { courses }, "Courses retrieved successfully");
 });
 

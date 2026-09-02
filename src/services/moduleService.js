@@ -10,8 +10,9 @@ function serializeModule(doc) {
   return json;
 }
 
-export async function listModules({ courseId } = {}) {
+export async function listModules({ courseId, activeOnly = false } = {}) {
   const filter = {};
+  if (activeOnly) filter.status = "active";
   if (courseId) {
     if (!mongoose.isValidObjectId(courseId)) {
       throw new AppError("Course not found", 404, "NOT_FOUND");
@@ -20,19 +21,25 @@ export async function listModules({ courseId } = {}) {
   }
 
   const modules = await TrainingModule.find(filter)
-    .populate("course_id", "name code")
+    .populate("course_id", "name code status")
     .sort({ sort_order: 1, name: 1 });
 
-  return modules.map((doc) => {
-    const json = serializeModule(doc);
-    const course = doc.course_id;
-    if (course && typeof course === "object" && course.name) {
-      json.course_id = String(course._id);
-      json.course_name = course.name;
-      json.course_code = course.code;
-    }
-    return json;
-  });
+  return modules
+    .filter((doc) => {
+      if (!activeOnly) return true;
+      const course = doc.course_id;
+      return course && typeof course === "object" && course.status === "active";
+    })
+    .map((doc) => {
+      const json = serializeModule(doc);
+      const course = doc.course_id;
+      if (course && typeof course === "object" && course.name) {
+        json.course_id = String(course._id);
+        json.course_name = course.name;
+        json.course_code = course.code;
+      }
+      return json;
+    });
 }
 
 export async function getModuleById(id) {

@@ -9,10 +9,14 @@ function serializeCourse(doc) {
   return json;
 }
 
-export async function listCourses() {
-  const courses = await Course.find().sort({ name: 1 });
+export async function listCourses({ activeOnly = false } = {}) {
+  const filter = activeOnly ? { status: "active" } : {};
+  const courses = await Course.find(filter).sort({ name: 1 });
   const list = toJSONList(courses);
   const counts = await TrainingModule.aggregate([
+    ...(activeOnly
+      ? [{ $match: { status: "active" } }]
+      : []),
     { $group: { _id: "$course_id", count: { $sum: 1 } } },
   ]);
   const countMap = new Map(counts.map((c) => [String(c._id), c.count]));

@@ -3,8 +3,10 @@ import { success } from "../utils/response.js";
 import { asyncHandler } from "../utils/errors.js";
 
 export const list = asyncHandler(async (req, res) => {
+  const activeOnly = !req.user || req.query.active === "true";
   const modules = await moduleService.listModules({
     courseId: req.query.course_id || undefined,
+    activeOnly,
   });
   return success(res, { modules }, "Modules retrieved successfully");
 });

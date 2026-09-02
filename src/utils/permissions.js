@@ -55,7 +55,7 @@ export function canAccessTab(user, tab) {
   if (!user) return false;
   if (isAdmin(user)) return true;
   if (tab === "banks") return false;
-  return ["overview", "cohorts", "candidates", "profile", "settings"].includes(tab);
+  return ["overview", "cohorts", "candidates", "courses", "modules", "settings"].includes(tab);
 }
 
 export function filterCandidatePatch(user, patch) {
