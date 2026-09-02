@@ -54,8 +54,15 @@ export function isBankPartner(user) {
 export function canAccessTab(user, tab) {
   if (!user) return false;
   if (isAdmin(user)) return true;
-  if (tab === "banks") return false;
-  return ["overview", "cohorts", "candidates", "courses", "modules", "settings"].includes(tab);
+  if (isInstructor(user)) {
+    return ["overview", "cohorts", "candidates", "courses", "modules", "banks", "settings"].includes(
+      tab,
+    );
+  }
+  if (isBankPartner(user)) {
+    return ["overview", "cohorts", "candidates", "settings"].includes(tab);
+  }
+  return false;
 }
 
 export function filterCandidatePatch(user, patch) {

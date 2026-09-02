@@ -7,7 +7,8 @@ import { createModuleSchema, updateModuleSchema } from "../validators/moduleVali
 const router = Router();
 
 router.get("/", optionalAuthenticate, moduleController.list);
-router.get("/:id", authenticate, authorizeRoles("admin", "instructor"), moduleController.getOne);
+router.get("/:id/attachments/:attachmentId", optionalAuthenticate, moduleController.downloadAttachment);
+router.get("/:id", optionalAuthenticate, moduleController.getOne);
 router.post(
   "/",
   authenticate,
