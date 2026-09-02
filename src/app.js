@@ -10,6 +10,8 @@ import cohortRoutes from "./routes/cohortRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import institutionRoutes from "./routes/institutionRoutes.js";
 import lenderRoutes from "./routes/lenderRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import moduleRoutes from "./routes/moduleRoutes.js";
 
 const trackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -74,6 +76,8 @@ export function createApp() {
   app.use("/api/candidates", candidateRoutes);
   app.use("/api/institutions", institutionRoutes);
   app.use("/api/financing/lenders", lenderRoutes);
+  app.use("/api/courses", courseRoutes);
+  app.use("/api/modules", moduleRoutes);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

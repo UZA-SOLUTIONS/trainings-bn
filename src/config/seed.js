@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import { Cohort } from "../models/Cohort.js";
 import { FinancingInstitution } from "../models/FinancingInstitution.js";
 import { StaffUser } from "../models/StaffUser.js";
+import { Course } from "../models/Course.js";
+import { TrainingModule } from "../models/TrainingModule.js";
 import { env } from "./env.js";
 import { migrateInstitutionLinks } from "./migrate.js";
 import { seedConsentsForInstitution } from "../services/lenderFileService.js";
@@ -134,6 +136,69 @@ const DEFAULT_INSTITUTIONS = [
   },
 ];
 
+const DEFAULT_COURSES = [
+  {
+    name: "Tunga Taxi EV Driver Programme",
+    code: "TT-EV-CORE",
+    description: "Core training for taxi drivers entering the EV ownership programme.",
+    duration_weeks: 4,
+    status: "active",
+    modules: [
+      {
+        name: "Programme orientation & safety",
+        code: "M01",
+        description: "Welcome, programme rules, road safety basics, and EV awareness.",
+        sort_order: 1,
+        duration_hours: 8,
+      },
+      {
+        name: "EV vehicle operations",
+        code: "M02",
+        description: "Charging, range management, daily checks, and passenger service.",
+        sort_order: 2,
+        duration_hours: 16,
+      },
+      {
+        name: "Business & financing readiness",
+        code: "M03",
+        description: "Earnings, savings, deposit planning, and loan-file readiness.",
+        sort_order: 3,
+        duration_hours: 8,
+      },
+      {
+        name: "Assessment & graduation",
+        code: "M04",
+        description: "Practical assessment, exam, and graduation checklist.",
+        sort_order: 4,
+        duration_hours: 8,
+      },
+    ],
+  },
+  {
+    name: "Customer service & professionalism",
+    code: "TT-SVC",
+    description: "Soft skills for professional taxi service in Kigali.",
+    duration_weeks: 1,
+    status: "active",
+    modules: [
+      {
+        name: "Passenger experience",
+        code: "S01",
+        description: "Greeting, routing, accessibility, and conflict handling.",
+        sort_order: 1,
+        duration_hours: 6,
+      },
+      {
+        name: "Digital tools & payments",
+        code: "S02",
+        description: "App usage, cashless payments, and trip records.",
+        sort_order: 2,
+        duration_hours: 4,
+      },
+    ],
+  },
+];
+
 /** Seeds default cohorts and banks once when collections are empty. */
 export async function seedIfEmpty() {
   let ungukaId = null;
@@ -161,6 +226,7 @@ export async function seedIfEmpty() {
 
   await migrateInstitutionLinks();
   await seedStaffIfMissing(ungukaId);
+  await seedCoursesIfEmpty();
 
   if (ungukaId) {
     const consents = await seedConsentsForInstitution(ungukaId);
@@ -168,6 +234,32 @@ export async function seedIfEmpty() {
       console.log(`Seeded ${consents} borrower–lender consent record(s) for Unguka Bank`);
     }
   }
+}
+
+/** Seeds default courses and modules when the courses collection is empty. */
+export async function seedCoursesIfEmpty() {
+  const courseCount = await Course.countDocuments();
+  if (courseCount > 0) {
+    console.log("Course seed: courses already exist");
+    return;
+  }
+
+  let moduleTotal = 0;
+  for (const entry of DEFAULT_COURSES) {
+    const { modules, ...courseFields } = entry;
+    const course = await Course.create(courseFields);
+    if (modules?.length) {
+      await TrainingModule.insertMany(
+        modules.map((m) => ({
+          ...m,
+          course_id: course._id,
+          status: "active",
+        })),
+      );
+      moduleTotal += modules.length;
+    }
+  }
+  console.log(`Seeded ${DEFAULT_COURSES.length} courses and ${moduleTotal} modules`);
 }
 
 /** Creates default staff accounts when their email is not already taken. */
