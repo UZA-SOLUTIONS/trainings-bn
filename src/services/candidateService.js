@@ -203,15 +203,23 @@ export async function listCandidatesSummary(user) {
 }
 
 const CANDIDATE_CODE_RE = /^UZA-\d{4}-\d{5}$/;
+const BANK_ID_RE = /^UZA-BANK-\d{4}-\d{5}$/;
 
-export async function trackCandidateByCode(rawCode) {
+export async function trackByCode(rawCode) {
   const code = String(rawCode || "")
     .trim()
     .toUpperCase();
 
+  if (BANK_ID_RE.test(code)) {
+    const { getInstitutionByBankId, buildBankTrackView } = await import("./bankTrackService.js");
+    const institution = await getInstitutionByBankId(code);
+    const bank = await buildBankTrackView(institution);
+    return { type: "bank", bank };
+  }
+
   if (!CANDIDATE_CODE_RE.test(code)) {
     throw new AppError(
-      "Enter a valid candidate ID (example: UZA-2026-00001).",
+      "Enter a valid candidate ID (UZA-2026-00001) or bank ID (UZA-BANK-2026-00001).",
       400,
       "INVALID_CODE",
     );
@@ -223,5 +231,19 @@ export async function trackCandidateByCode(rawCode) {
   }
 
   const cohort = await Cohort.findById(candidate.cohort_id).lean();
-  return buildCandidateTrackView(candidate, cohort);
+  const track = await buildCandidateTrackView(candidate, cohort);
+  return { type: "candidate", track };
+}
+
+/** @deprecated Prefer trackByCode */
+export async function trackCandidateByCode(rawCode) {
+  const result = await trackByCode(rawCode);
+  if (result.type !== "candidate") {
+    throw new AppError(
+      "Enter a valid candidate ID (example: UZA-2026-00001).",
+      400,
+      "INVALID_CODE",
+    );
+  }
+  return result.track;
 }

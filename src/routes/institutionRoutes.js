@@ -13,17 +13,17 @@ router.get("/", optionalAuthenticate, institutionController.list);
 router.post(
   "/",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(createInstitutionSchema),
   institutionController.create,
 );
 router.patch(
   "/:id",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(updateInstitutionSchema),
   institutionController.update,
 );
-router.delete("/:id", authenticate, authorizeRoles("admin"), institutionController.remove);
+router.delete("/:id", authenticate, authorizeRoles("admin", "instructor"), institutionController.remove);
 
 export default router;

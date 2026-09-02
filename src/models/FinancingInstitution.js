@@ -4,6 +4,8 @@ const institutionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    /** Public track ID for bank partners — e.g. UZA-BANK-2026-00001 */
+    bank_id: { type: String, unique: true, sparse: true, uppercase: true, trim: true, index: true },
     target_program: { type: String, required: true, default: "tunga_taxi" },
     is_default_for_program: { type: Boolean, default: false },
     is_active: { type: Boolean, default: true },

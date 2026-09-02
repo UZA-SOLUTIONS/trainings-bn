@@ -25,6 +25,9 @@ export const remove = asyncHandler(async (req, res) => {
 });
 
 export const track = asyncHandler(async (req, res) => {
-  const trackView = await candidateService.trackCandidateByCode(req.params.code);
-  return success(res, { track: trackView }, "Application status retrieved");
+  const result = await candidateService.trackByCode(req.params.code);
+  if (result.type === "bank") {
+    return success(res, { type: "bank", bank: result.bank }, "Bank portfolio retrieved");
+  }
+  return success(res, { type: "candidate", track: result.track }, "Application status retrieved");
 });

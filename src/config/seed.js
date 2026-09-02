@@ -6,6 +6,7 @@ import { Course } from "../models/Course.js";
 import { TrainingModule } from "../models/TrainingModule.js";
 import { env } from "./env.js";
 import { migrateInstitutionLinks } from "./migrate.js";
+import { ensureBankIds } from "../services/institutionService.js";
 import { seedConsentsForInstitution } from "../services/lenderFileService.js";
 
 const DEFAULT_STAFF = [
@@ -148,6 +149,25 @@ const DEFAULT_COURSES = [
         name: "Programme orientation & safety",
         code: "M01",
         description: "Welcome, programme rules, road safety basics, and EV awareness.",
+        content:
+          "This opening module introduces the Tunga Taxi programme, classroom and road expectations, and foundational EV safety habits before drivers move into vehicle operations.",
+        contents: [
+          {
+            title: "Welcome & programme rules",
+            body: "Overview of UZA Mobility, cohort schedule, attendance, and conduct expectations.",
+            sort_order: 1,
+          },
+          {
+            title: "Road safety basics",
+            body: "Defensive driving refreshers for Kigali traffic, fatigue management, and passenger safety.",
+            sort_order: 2,
+          },
+          {
+            title: "EV awareness",
+            body: "How EVs differ from ICE vehicles: torque, quiet operation, and high-voltage caution zones.",
+            sort_order: 3,
+          },
+        ],
         sort_order: 1,
         duration_hours: 8,
       },
@@ -155,6 +175,25 @@ const DEFAULT_COURSES = [
         name: "EV vehicle operations",
         code: "M02",
         description: "Charging, range management, daily checks, and passenger service.",
+        content:
+          "Hands-on module covering daily vehicle readiness, charging strategy, range planning, and professional passenger service in an EV taxi.",
+        contents: [
+          {
+            title: "Daily checks & cabin readiness",
+            body: "Walk-around, tyre pressure, cabin cleanliness, and pre-trip digital checks.",
+            sort_order: 1,
+          },
+          {
+            title: "Charging & range management",
+            body: "AC/DC charging etiquette, state-of-charge targets, and planning shifts around range.",
+            sort_order: 2,
+          },
+          {
+            title: "Passenger service",
+            body: "Greeting, route confirmation, accessibility considerations, and end-of-trip handover.",
+            sort_order: 3,
+          },
+        ],
         sort_order: 2,
         duration_hours: 16,
       },
@@ -162,6 +201,20 @@ const DEFAULT_COURSES = [
         name: "Business & financing readiness",
         code: "M03",
         description: "Earnings, savings, deposit planning, and loan-file readiness.",
+        content:
+          "Drivers learn how training connects to financing: projecting earnings, building a deposit, and preparing a complete loan file with partner banks.",
+        contents: [
+          {
+            title: "Earnings & savings plan",
+            body: "Trip economics, weekly targets, and building the required client contribution.",
+            sort_order: 1,
+          },
+          {
+            title: "Loan-file readiness",
+            body: "Documents, disclosures, and what partner banks review before approval.",
+            sort_order: 2,
+          },
+        ],
         sort_order: 3,
         duration_hours: 8,
       },
@@ -169,6 +222,20 @@ const DEFAULT_COURSES = [
         name: "Assessment & graduation",
         code: "M04",
         description: "Practical assessment, exam, and graduation checklist.",
+        content:
+          "Final practical and written assessment covering safety, EV operations, and financing readiness. Successful drivers graduate into the financing pipeline.",
+        contents: [
+          {
+            title: "Practical assessment",
+            body: "Observed drive, charging demo, and passenger-service checklist.",
+            sort_order: 1,
+          },
+          {
+            title: "Written exam & graduation",
+            body: "Short exam, score review, and graduation / next-step briefing.",
+            sort_order: 2,
+          },
+        ],
         sort_order: 4,
         duration_hours: 8,
       },
@@ -185,6 +252,20 @@ const DEFAULT_COURSES = [
         name: "Passenger experience",
         code: "S01",
         description: "Greeting, routing, accessibility, and conflict handling.",
+        content:
+          "Soft-skills module focused on professional taxi service: first impressions, clear routing, accessibility, and calm conflict handling.",
+        contents: [
+          {
+            title: "Greeting & first impressions",
+            body: "Cabin presentation, greeting scripts, and confirming destination politely.",
+            sort_order: 1,
+          },
+          {
+            title: "Accessibility & conflict handling",
+            body: "Supporting passengers with mobility needs and de-escalating fare or route disputes.",
+            sort_order: 2,
+          },
+        ],
         sort_order: 1,
         duration_hours: 6,
       },
@@ -192,6 +273,20 @@ const DEFAULT_COURSES = [
         name: "Digital tools & payments",
         code: "S02",
         description: "App usage, cashless payments, and trip records.",
+        content:
+          "Practical training on trip apps, cashless payments, and keeping accurate digital records for financing partners.",
+        contents: [
+          {
+            title: "App usage",
+            body: "Accepting trips, navigation basics, and reporting issues in-app.",
+            sort_order: 1,
+          },
+          {
+            title: "Payments & trip records",
+            body: "Cashless flows, receipts, and why clean trip history matters for financing.",
+            sort_order: 2,
+          },
+        ],
         sort_order: 2,
         duration_hours: 4,
       },
@@ -225,6 +320,10 @@ export async function seedIfEmpty() {
   }
 
   await migrateInstitutionLinks();
+  const bankIdsAssigned = await ensureBankIds();
+  if (bankIdsAssigned > 0) {
+    console.log(`Assigned bank ID to ${bankIdsAssigned} institution(s)`);
+  }
   await seedStaffIfMissing(ungukaId);
   await seedCoursesIfEmpty();
 
