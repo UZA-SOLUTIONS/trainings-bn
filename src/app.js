@@ -13,6 +13,19 @@ import lenderRoutes from "./routes/lenderRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import moduleRoutes from "./routes/moduleRoutes.js";
 
+/** Preview/prod hosts that should always be allowed without listing every CLIENT_URL entry. */
+function isAllowedProductionOrigin(origin) {
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") return false;
+    if (hostname.endsWith(".vercel.app")) return true;
+    if (hostname === "uzamobility.com" || hostname.endsWith(".uzamobility.com")) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 const trackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 40,
@@ -40,18 +53,24 @@ export function createApp() {
         }
 
         const allowed = getClientOrigins();
-        if (allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+        if (
+          allowed.includes(origin) ||
+          isAllowedProductionOrigin(origin)
+        ) {
           callback(null, true);
           return;
         }
 
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+        // Reject without throwing — a thrown Error becomes HTTP 500 with no CORS headers,
+        // which browsers report as a generic CORS failure.
+        callback(null, false);
       },
       credentials: true,
     }),
   );
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+  // Larger limit so instructors can save full module content + small file uploads
+  app.use(express.json({ limit: "5mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
   app.use(
     rateLimit({
