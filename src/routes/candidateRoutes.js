@@ -32,7 +32,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   candidateController.remove,
 );
 

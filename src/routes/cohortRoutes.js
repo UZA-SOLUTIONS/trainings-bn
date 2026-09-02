@@ -12,17 +12,17 @@ router.get("/:id", authenticate, authorizeRoles("admin", "instructor"), cohortCo
 router.post(
   "/",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(createCohortSchema),
   cohortController.create,
 );
 router.patch(
   "/:id",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(updateCohortSchema),
   cohortController.update,
 );
-router.delete("/:id", authenticate, authorizeRoles("admin"), cohortController.remove);
+router.delete("/:id", authenticate, authorizeRoles("admin", "instructor"), cohortController.remove);
 
 export default router;

@@ -11,17 +11,17 @@ router.get("/:id", authenticate, authorizeRoles("admin", "instructor"), moduleCo
 router.post(
   "/",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(createModuleSchema),
   moduleController.create,
 );
 router.patch(
   "/:id",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "instructor"),
   validate(updateModuleSchema),
   moduleController.update,
 );
-router.delete("/:id", authenticate, authorizeRoles("admin"), moduleController.remove);
+router.delete("/:id", authenticate, authorizeRoles("admin", "instructor"), moduleController.remove);
 
 export default router;
