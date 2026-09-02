@@ -48,7 +48,7 @@ Sign in at the frontend `/auth` page with any of the accounts above.
 | Variable | Purpose |
 |----------|---------|
 | `PORT` | API port (default 5000) |
-| `CLIENT_URL` | Frontend origin for CORS |
+| `CLIENT_URL` | Frontend origin(s) for CORS — comma-separated URLs |
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_EXPIRES_IN` | e.g. `1h` |
@@ -68,3 +68,21 @@ Atlas:
 ```
 MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.mongodb.net/uza_mobility
 ```
+
+## Deploy on Vercel
+
+This repo includes `api/index.js` and `vercel.json` for serverless Express.
+
+In the Vercel project (**trainings-bn**), set these environment variables:
+
+| Variable | Example |
+|----------|---------|
+| `MONGODB_URI` | Atlas connection string (not `localhost`) |
+| `JWT_SECRET` | Long random secret (16+ characters) |
+| `CLIENT_URL` | `https://trainings-fn.vercel.app` (comma-separate for multiple) |
+| `NODE_ENV` | `production` |
+| `SEED_STAFF_PASSWORD` | Password for seeded staff accounts |
+
+In MongoDB Atlas → **Network Access**, allow `0.0.0.0/0` so Vercel can connect.
+
+After deploy, verify: `https://trainings-bn.vercel.app/api/health`

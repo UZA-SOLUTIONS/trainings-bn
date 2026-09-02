@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
 
+const globalCache = globalThis;
+
+if (!globalCache.__uzaMongoose) {
+  globalCache.__uzaMongoose = { conn: null, promise: null };
+}
+
+const cached = globalCache.__uzaMongoose;
+
 function atlasTlsHint(err) {
   const servers = err?.reason?.servers;
   if (!servers) return false;
@@ -13,13 +21,28 @@ function atlasTlsHint(err) {
 
 export async function connectDatabase() {
   mongoose.set("strictQuery", true);
+
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 20000,
+        ...(process.env.VERCEL ? {} : { family: 4 }),
+      })
+      .then((mongooseInstance) => {
+        console.log(`MongoDB connected: ${mongooseInstance.connection.name}`);
+        return mongooseInstance;
+      });
+  }
+
   try {
-    await mongoose.connect(env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 20000,
-      family: 4,
-    });
-    console.log(`MongoDB connected: ${mongoose.connection.name}`);
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (err) {
+    cached.promise = null;
     if (atlasTlsHint(err)) {
       console.error(
         "\nAtlas blocked the connection during TLS handshake.\n" +

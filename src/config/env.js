@@ -6,7 +6,21 @@ dotenv.config();
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  CLIENT_URL: z.string().url().default("http://localhost:5173"),
+  CLIENT_URL: z
+    .string()
+    .default("http://localhost:5173")
+    .refine(
+      (value) =>
+        value.split(",").every((part) => {
+          try {
+            new URL(part.trim());
+            return true;
+          } catch {
+            return false;
+          }
+        }),
+      { message: "CLIENT_URL must be one or more valid URLs, comma-separated" },
+    ),
   MONGODB_URI: z.string().min(1),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("1h"),
@@ -22,3 +36,8 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+/** Comma-separated CLIENT_URL values, trimmed. */
+export function getClientOrigins() {
+  return env.CLIENT_URL.split(",").map((origin) => origin.trim()).filter(Boolean);
+}

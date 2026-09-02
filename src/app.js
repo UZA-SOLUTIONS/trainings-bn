@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { env } from "./config/env.js";
+import { getClientOrigins } from "./config/env.js";
 import { errorMiddleware, notFoundMiddleware } from "./middleware/errorMiddleware.js";
 import * as candidateController from "./controllers/candidateController.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -31,7 +31,20 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CLIENT_URL,
+      origin(origin, callback) {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        const allowed = getClientOrigins();
+        if (allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      },
       credentials: true,
     }),
   );
