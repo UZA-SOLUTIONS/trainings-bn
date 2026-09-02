@@ -21,3 +21,8 @@ export const update = asyncHandler(async (req, res) => {
   const course = await courseService.updateCourse(req.params.id, req.body);
   return success(res, { course }, "Course updated successfully");
 });
+
+export const remove = asyncHandler(async (req, res) => {
+  const course = await courseService.deleteCourse(req.params.id);
+  return success(res, { course }, "Course deleted successfully");
+});

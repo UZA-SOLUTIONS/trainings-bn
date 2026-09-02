@@ -22,5 +22,6 @@ router.patch(
   validate(updateCourseSchema),
   courseController.update,
 );
+router.delete("/:id", authenticate, authorizeRoles("admin"), courseController.remove);
 
 export default router;

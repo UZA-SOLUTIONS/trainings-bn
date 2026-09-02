@@ -23,3 +23,8 @@ export const update = asyncHandler(async (req, res) => {
   const module = await moduleService.updateModule(req.params.id, req.body);
   return success(res, { module }, "Module updated successfully");
 });
+
+export const remove = asyncHandler(async (req, res) => {
+  const module = await moduleService.deleteModule(req.params.id);
+  return success(res, { module }, "Module deleted successfully");
+});

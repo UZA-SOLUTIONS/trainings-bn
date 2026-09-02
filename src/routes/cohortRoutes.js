@@ -23,5 +23,6 @@ router.patch(
   validate(updateCohortSchema),
   cohortController.update,
 );
+router.delete("/:id", authenticate, authorizeRoles("admin"), cohortController.remove);
 
 export default router;

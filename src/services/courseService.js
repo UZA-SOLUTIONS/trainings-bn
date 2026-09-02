@@ -70,3 +70,13 @@ export async function updateCourse(id, payload) {
     throw new AppError(err.message, 400, "COURSE_UPDATE_FAILED");
   }
 }
+
+export async function deleteCourse(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new AppError("Course not found", 404, "NOT_FOUND");
+  }
+  const course = await Course.findByIdAndDelete(id);
+  if (!course) throw new AppError("Course not found", 404, "NOT_FOUND");
+  await TrainingModule.deleteMany({ course_id: id });
+  return { ...serializeCourse(course), module_count: 0 };
+}

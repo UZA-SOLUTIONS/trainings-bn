@@ -57,3 +57,12 @@ export async function updateInstitution(id, payload) {
   if (!institution) throw new AppError("Institution not found", 404, "NOT_FOUND");
   return toJSON(institution);
 }
+
+export async function deleteInstitution(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new AppError("Institution not found", 404, "NOT_FOUND");
+  }
+  const institution = await FinancingInstitution.findByIdAndDelete(id);
+  if (!institution) throw new AppError("Institution not found", 404, "NOT_FOUND");
+  return toJSON(institution);
+}

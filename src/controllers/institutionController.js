@@ -20,3 +20,8 @@ export const update = asyncHandler(async (req, res) => {
   const institution = await institutionService.updateInstitution(req.params.id, req.body);
   return success(res, { institution }, "Institution updated successfully");
 });
+
+export const remove = asyncHandler(async (req, res) => {
+  const institution = await institutionService.deleteInstitution(req.params.id);
+  return success(res, { institution }, "Institution deleted successfully");
+});

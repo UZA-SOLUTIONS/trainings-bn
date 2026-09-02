@@ -95,3 +95,12 @@ export async function updateModule(id, payload) {
     throw new AppError(err.message, 400, "MODULE_UPDATE_FAILED");
   }
 }
+
+export async function deleteModule(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new AppError("Module not found", 404, "NOT_FOUND");
+  }
+  const mod = await TrainingModule.findByIdAndDelete(id);
+  if (!mod) throw new AppError("Module not found", 404, "NOT_FOUND");
+  return serializeModule(mod);
+}

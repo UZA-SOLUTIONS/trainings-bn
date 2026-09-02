@@ -27,6 +27,11 @@ export const update = asyncHandler(async (req, res) => {
   return success(res, { cohort }, "Cohort updated successfully");
 });
 
+export const remove = asyncHandler(async (req, res) => {
+  const cohort = await cohortService.deleteCohort(req.params.id);
+  return success(res, { cohort }, "Cohort deleted successfully");
+});
+
 export const overview = asyncHandler(async (req, res) => {
   const [cohorts, candidates] = await Promise.all([
     cohortService.listCohorts(req.user, { openOnly: false }),

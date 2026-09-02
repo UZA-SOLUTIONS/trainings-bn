@@ -19,6 +19,11 @@ export const update = asyncHandler(async (req, res) => {
   return success(res, { candidate }, "Candidate updated successfully");
 });
 
+export const remove = asyncHandler(async (req, res) => {
+  const result = await candidateService.deleteCandidate(req.user, req.params.id);
+  return success(res, result, "Candidate deleted successfully");
+});
+
 export const track = asyncHandler(async (req, res) => {
   const trackView = await candidateService.trackCandidateByCode(req.params.code);
   return success(res, { track: trackView }, "Application status retrieved");

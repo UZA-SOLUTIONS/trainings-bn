@@ -22,5 +22,6 @@ router.patch(
   validate(updateModuleSchema),
   moduleController.update,
 );
+router.delete("/:id", authenticate, authorizeRoles("admin"), moduleController.remove);
 
 export default router;

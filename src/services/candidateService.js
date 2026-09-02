@@ -163,6 +163,27 @@ export async function updateCandidate(user, id, patch) {
   return json;
 }
 
+export async function deleteCandidate(user, id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new AppError("Candidate not found", 404, "NOT_FOUND");
+  }
+
+  const existing = await Candidate.findById(id);
+  if (!existing) throw new AppError("Candidate not found", 404, "NOT_FOUND");
+
+  await assertCandidateAccess(user, existing);
+
+  const previousStatus = existing.status;
+  const cohortId = existing.cohort_id;
+  await existing.deleteOne();
+
+  if (["enrolled", "graduated"].includes(previousStatus)) {
+    await promoteWaitlist(cohortId);
+  }
+
+  return { id: String(id) };
+}
+
 export async function listCandidatesSummary(user) {
   const filter = await buildListFilter(user, {});
   if (filter.impossible) return [];

@@ -29,5 +29,11 @@ router.patch(
   validate(updateCandidateSchema),
   candidateController.update,
 );
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeRoles("admin"),
+  candidateController.remove,
+);
 
 export default router;
