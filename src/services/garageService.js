@@ -245,9 +245,7 @@ export function buildGaragePreview(candidate, record) {
   return {
     status: hasLive ? "connected" : "awaiting_garage",
     live: hasLive,
-    message: hasLive
-      ? "Latest full vehicle diagnosis from the garage."
-      : "Garage should post a full diagnosis: battery SOH, motor, brakes, tyres, faults, and service data. Numbers stay at 0 until the first sync.",
+    message: "",
     uza_id: code,
     vehicle: {
       plate: record?.plate || candidate?.current_vehicle_plate || "",
