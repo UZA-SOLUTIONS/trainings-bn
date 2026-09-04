@@ -1,4 +1,4 @@
-import { buildWalletPreview } from "./walletPreviewService.js";
+import { buildWalletPreview, UZA_SELLING_PRICE_RWF } from "./walletPreviewService.js";
 import { getGarageForCandidate } from "./garageService.js";
 
 /** Public driver-facing document checklist (matches frontend bank-requirements). */
@@ -31,9 +31,16 @@ export const TRACK_DOCUMENTS = [
 ];
 
 function depositRequired(priceRwf) {
-  if (!priceRwf || priceRwf <= 0) return null;
-  const percent = priceRwf <= 25_000_000 ? 0.1 : 0.15;
-  return { percent, amount: Math.round(priceRwf * percent) };
+  const price = Number(priceRwf) || 0;
+  if (price <= 0) return null;
+  const percent = price <= 25_000_000 ? 0.1 : 0.15;
+  return { percent, amount: Math.round(price * percent) };
+}
+
+function wholeRwf(n) {
+  if (n == null || n === "") return 0;
+  const v = Number(n);
+  return Number.isFinite(v) ? Math.round(v) : 0;
 }
 
 function docApplies(doc, candidate) {
@@ -244,7 +251,18 @@ export async function buildCandidateTrackView(candidate, cohort) {
   const docs = buildDocuments(candidate);
   const requiredDocs = docs.filter((d) => d.required);
   const completeCount = requiredDocs.filter((d) => d.complete).length;
-  const deposit = depositRequired(Number(candidate.target_vehicle_price_rwf));
+
+  const vehicleName = String(candidate.target_vehicle_name || "").trim() || null;
+  let vehiclePrice = wholeRwf(candidate.target_vehicle_price_rwf);
+  // When EV is chosen but price was blank in the shortlist, use programme selling price for math.
+  if (vehiclePrice <= 0 && vehicleName) {
+    vehiclePrice = UZA_SELLING_PRICE_RWF;
+  }
+  const depositReady = wholeRwf(candidate.deposit_available_rwf);
+  const deposit = depositRequired(vehiclePrice);
+  // Bank finances remaining vehicle price after candidate contribution
+  const bankFinanceRwf =
+    vehiclePrice > 0 ? Math.max(0, vehiclePrice - depositReady) : 0;
 
   const milestones = MILESTONES.map((m) => ({
     ...m,
@@ -288,16 +306,17 @@ export async function buildCandidateTrackView(candidate, cohort) {
     financing: {
       preferred_financing: candidate.preferred_financing,
       preferred_term_years: candidate.preferred_term_years,
-      target_vehicle_name: candidate.target_vehicle_name || null,
-      target_vehicle_price_rwf: candidate.target_vehicle_price_rwf,
-      deposit_available_rwf: candidate.deposit_available_rwf,
+      target_vehicle_name: vehicleName,
+      target_vehicle_price_rwf: vehiclePrice,
+      deposit_available_rwf: depositReady,
       deposit_required_rwf: deposit?.amount ?? null,
       deposit_required_percent: deposit?.percent ?? null,
-      needs_uza_access_support: candidate.needs_uza_access_support,
-      offers_collateral: candidate.offers_collateral,
-      collateral_value_rwf: candidate.collateral_value_rwf,
-      has_bank_account: candidate.has_bank_account,
-      listed_on_crb: candidate.listed_on_crb,
+      bank_finance_rwf: bankFinanceRwf,
+      needs_uza_access_support: Boolean(candidate.needs_uza_access_support),
+      offers_collateral: Boolean(candidate.offers_collateral),
+      collateral_value_rwf: wholeRwf(candidate.collateral_value_rwf),
+      has_bank_account: Boolean(candidate.has_bank_account),
+      listed_on_crb: Boolean(candidate.listed_on_crb),
     },
     milestones,
     current_stage: currentMilestone?.label ?? "Application received",
