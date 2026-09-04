@@ -49,6 +49,7 @@ export const createCandidateSchema = z.object({
   spouse_name: z.string().trim().max(120).optional().default(""),
   is_cooperative_member: z.boolean().optional().default(false),
   cooperative_name: z.string().trim().max(120).optional().default(""),
+  target_vehicle_name: z.string().trim().max(160).optional().default(""),
   target_vehicle_price_rwf: z.coerce.number().min(0).optional().default(0),
   offers_collateral: z.boolean().optional().default(false),
   collateral_description: z.string().trim().max(300).optional().default(""),
@@ -98,4 +99,5 @@ export const updateCandidateSchema = z.object({
     ])
     .optional(),
   bank_notes: z.string().max(2000).optional().nullable(),
+  target_vehicle_name: z.string().trim().max(160).optional().nullable(),
 });

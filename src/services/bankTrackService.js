@@ -68,6 +68,7 @@ export async function buildBankTrackView(institution) {
       listed_on_crb: Boolean(c.listed_on_crb),
       needs_uza_access_support: Boolean(c.needs_uza_access_support),
       deposit_available_rwf: c.deposit_available_rwf ?? null,
+      target_vehicle_name: c.target_vehicle_name || null,
       target_vehicle_price_rwf: c.target_vehicle_price_rwf ?? null,
       preferred_financing: c.preferred_financing ?? null,
       documents_percent: summary.percent,

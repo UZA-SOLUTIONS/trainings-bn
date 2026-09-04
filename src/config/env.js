@@ -25,6 +25,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("1h"),
   SEED_STAFF_PASSWORD: z.string().min(6).default("ChangeMe123!"),
+  /** Shared secret for garage systems posting vehicle health (optional in dev). */
+  GARAGE_API_KEY: z.string().min(8).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

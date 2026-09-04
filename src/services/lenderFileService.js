@@ -6,6 +6,7 @@ import { LenderReadAudit } from "../models/LenderReadAudit.js";
 import { FinancingInstitution } from "../models/FinancingInstitution.js";
 import { AppError } from "../utils/errors.js";
 import { filterCandidatePatch, isAdmin, isBankPartner } from "../utils/permissions.js";
+import { buildWalletPreview } from "./walletPreviewService.js";
 
 export const LENDER_REFUSAL_MESSAGE = "No file available for that reference.";
 
@@ -87,6 +88,8 @@ function buildLenderFile(candidate, cohort, institution) {
 
   const creditEnhancement = buildCreditEnhancementSection(institution, candidate);
   if (creditEnhancement) file.creditEnhancement = creditEnhancement;
+
+  file.wallet = buildWalletPreview(candidate, { audience: "bank" });
 
   return file;
 }

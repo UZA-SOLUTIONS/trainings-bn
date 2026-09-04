@@ -1,3 +1,6 @@
+import { buildWalletPreview } from "./walletPreviewService.js";
+import { getGarageForCandidate } from "./garageService.js";
+
 /** Public driver-facing document checklist (matches frontend bank-requirements). */
 export const TRACK_DOCUMENTS = [
   { key: "doc_national_id", label: "National ID", conditional: null },
@@ -237,7 +240,7 @@ function buildApprovals(candidate, docs, deposit) {
   return items;
 }
 
-export function buildCandidateTrackView(candidate, cohort) {
+export async function buildCandidateTrackView(candidate, cohort) {
   const docs = buildDocuments(candidate);
   const requiredDocs = docs.filter((d) => d.required);
   const completeCount = requiredDocs.filter((d) => d.complete).length;
@@ -285,6 +288,7 @@ export function buildCandidateTrackView(candidate, cohort) {
     financing: {
       preferred_financing: candidate.preferred_financing,
       preferred_term_years: candidate.preferred_term_years,
+      target_vehicle_name: candidate.target_vehicle_name || null,
       target_vehicle_price_rwf: candidate.target_vehicle_price_rwf,
       deposit_available_rwf: candidate.deposit_available_rwf,
       deposit_required_rwf: deposit?.amount ?? null,
@@ -298,5 +302,7 @@ export function buildCandidateTrackView(candidate, cohort) {
     milestones,
     current_stage: currentMilestone?.label ?? "Application received",
     approvals: buildApprovals(candidate, docs, deposit),
+    wallet: buildWalletPreview(candidate, { audience: "driver" }),
+    garage: await getGarageForCandidate(candidate),
   };
 }
