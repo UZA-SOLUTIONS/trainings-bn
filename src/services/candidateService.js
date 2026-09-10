@@ -205,7 +205,19 @@ export async function listCandidatesSummary(user) {
 const CANDIDATE_CODE_RE = /^UZA-\d{4}-\d{5}$/;
 const BANK_ID_RE = /^UZA-BANK-\d{4}-\d{5}$/;
 
-export async function trackByCode(rawCode) {
+function normalizeNationalId(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]/g, "");
+}
+
+/**
+ * Public track lookup.
+ * - Bank IDs return the portfolio immediately.
+ * - Personal candidate IDs require national ID confirmation.
+ */
+export async function trackByCode(rawCode, { nationalId } = {}) {
   const code = String(rawCode || "")
     .trim()
     .toUpperCase();
@@ -230,14 +242,39 @@ export async function trackByCode(rawCode) {
     throw new AppError("No application found for that candidate ID.", 404, "NOT_FOUND");
   }
 
+  const providedNid = normalizeNationalId(nationalId);
+  const expectedNid = normalizeNationalId(candidate.national_id);
+  const nidMatches = Boolean(providedNid) && providedNid === expectedNid;
+
+  if (!nidMatches) {
+    if (!providedNid) {
+      return {
+        type: "candidate_challenge",
+        candidate_code: candidate.candidate_code,
+      };
+    }
+    throw new AppError(
+      "National ID does not match this candidate ID. Check and try again.",
+      403,
+      "NATIONAL_ID_MISMATCH",
+    );
+  }
+
   const cohort = await Cohort.findById(candidate.cohort_id).lean();
   const track = await buildCandidateTrackView(candidate, cohort);
   return { type: "candidate", track };
 }
 
 /** @deprecated Prefer trackByCode */
-export async function trackCandidateByCode(rawCode) {
-  const result = await trackByCode(rawCode);
+export async function trackCandidateByCode(rawCode, options = {}) {
+  const result = await trackByCode(rawCode, options);
+  if (result.type === "candidate_challenge") {
+    throw new AppError(
+      "Confirm with your national ID to view this application.",
+      401,
+      "NATIONAL_ID_REQUIRED",
+    );
+  }
   if (result.type !== "candidate") {
     throw new AppError(
       "Enter a valid candidate ID (example: UZA-2026-00001).",

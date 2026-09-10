@@ -25,9 +25,21 @@ export const remove = asyncHandler(async (req, res) => {
 });
 
 export const track = asyncHandler(async (req, res) => {
-  const result = await candidateService.trackByCode(req.params.code);
+  const result = await candidateService.trackByCode(req.params.code, {
+    nationalId: req.query.national_id,
+  });
   if (result.type === "bank") {
     return success(res, { type: "bank", bank: result.bank }, "Bank portfolio retrieved");
+  }
+  if (result.type === "candidate_challenge") {
+    return success(
+      res,
+      {
+        type: "candidate_challenge",
+        candidate_code: result.candidate_code,
+      },
+      "Confirm with your national ID to view this application",
+    );
   }
   return success(res, { type: "candidate", track: result.track }, "Application status retrieved");
 });
