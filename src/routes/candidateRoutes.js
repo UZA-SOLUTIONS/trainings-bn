@@ -1,5 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { z } from "zod";
 import * as candidateController from "../controllers/candidateController.js";
 import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validationMiddleware.js";
@@ -19,7 +20,34 @@ const trackLimiter = rateLimit({
   },
 });
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many login attempts. Try again later.",
+    error: "RATE_LIMITED",
+  },
+});
+
+const candidateLoginSchema = z.object({
+  candidate_code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^UZA-\d{4}-\d{5}$/, { message: "Enter a valid candidate ID (UZA-2026-00001)" }),
+});
+
 router.get("/track/:code", trackLimiter, candidateController.track);
+router.post(
+  "/auth/login",
+  loginLimiter,
+  validate(candidateLoginSchema),
+  candidateController.candidateLogin,
+);
+router.get("/auth/me", authenticate, authorizeRoles("candidate"), candidateController.candidateMe);
 router.post("/", validate(createCandidateSchema), candidateController.create);
 router.get("/", authenticate, authorizeRoles("admin", "instructor"), candidateController.list);
 router.patch(

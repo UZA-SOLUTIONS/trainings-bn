@@ -12,9 +12,10 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     const payload = verifyAccessToken(token);
     req.user = {
       id: payload.sub,
-      email: payload.email,
+      email: payload.email ?? null,
       role: payload.role,
       institution_id: payload.institution_id ?? null,
+      candidate_code: payload.candidate_code ?? null,
     };
     next();
   } catch {
@@ -31,9 +32,10 @@ export const optionalAuthenticate = asyncHandler(async (req, res, next) => {
     const payload = verifyAccessToken(header.slice(7));
     req.user = {
       id: payload.sub,
-      email: payload.email,
+      email: payload.email ?? null,
       role: payload.role,
       institution_id: payload.institution_id ?? null,
+      candidate_code: payload.candidate_code ?? null,
     };
   } catch {
     // ignore invalid optional token
