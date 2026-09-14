@@ -5,6 +5,8 @@ import * as candidateController from "../controllers/candidateController.js";
 import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validationMiddleware.js";
 import { createCandidateSchema, updateCandidateSchema } from "../validators/candidateValidator.js";
+import * as issueController from "../controllers/issueController.js";
+import { createCandidateIssueSchema } from "../validators/issueValidator.js";
 
 const router = Router();
 
@@ -50,6 +52,19 @@ router.post(
 router.get("/auth/me", authenticate, authorizeRoles("candidate"), candidateController.candidateMe);
 router.post("/", validate(createCandidateSchema), candidateController.create);
 router.get("/", authenticate, authorizeRoles("admin", "instructor"), candidateController.list);
+router.get(
+  "/:id/issues",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  issueController.listForCandidate,
+);
+router.post(
+  "/:id/issues",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  validate(createCandidateIssueSchema),
+  issueController.createForCandidate,
+);
 router.patch(
   "/:id",
   authenticate,
