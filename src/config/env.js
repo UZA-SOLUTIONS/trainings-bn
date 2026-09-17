@@ -27,6 +27,8 @@ const envSchema = z.object({
   SEED_STAFF_PASSWORD: z.string().min(6).default("ChangeMe123!"),
   /** Shared secret for garage systems posting vehicle health (optional in dev). */
   GARAGE_API_KEY: z.string().min(8).optional(),
+  /** Shared secret for institution dash pulling the published catalogue. */
+  CATALOGUE_SYNC_SECRET: z.string().min(8).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

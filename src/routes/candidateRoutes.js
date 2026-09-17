@@ -4,7 +4,9 @@ import { z } from "zod";
 import * as candidateController from "../controllers/candidateController.js";
 import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validationMiddleware.js";
-import { createCandidateSchema, updateCandidateSchema } from "../validators/candidateValidator.js";
+import { createCandidateSchema, updateCandidateSchema, createIntakeRosterSchema, bulkCreateIntakeRosterSchema } from "../validators/candidateValidator.js";
+import * as issueController from "../controllers/issueController.js";
+import { createCandidateIssueSchema } from "../validators/issueValidator.js";
 
 const router = Router();
 
@@ -49,7 +51,40 @@ router.post(
 );
 router.get("/auth/me", authenticate, authorizeRoles("candidate"), candidateController.candidateMe);
 router.post("/", validate(createCandidateSchema), candidateController.create);
+router.post(
+  "/intake",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  validate(createIntakeRosterSchema),
+  candidateController.createIntake,
+);
+router.post(
+  "/intake/bulk",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  validate(bulkCreateIntakeRosterSchema),
+  candidateController.bulkCreateIntake,
+);
 router.get("/", authenticate, authorizeRoles("admin", "instructor"), candidateController.list);
+router.get(
+  "/:id/issues",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  issueController.listForCandidate,
+);
+router.get(
+  "/:id",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  candidateController.getOne,
+);
+router.post(
+  "/:id/issues",
+  authenticate,
+  authorizeRoles("admin", "instructor"),
+  validate(createCandidateIssueSchema),
+  issueController.createForCandidate,
+);
 router.patch(
   "/:id",
   authenticate,

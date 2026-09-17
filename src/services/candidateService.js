@@ -7,9 +7,11 @@ import { AppError } from "../utils/errors.js";
 import { toJSON, toJSONList } from "../utils/serialize.js";
 import {
   assertCandidateAccess,
+  assertCohortAccess,
   cohortIdsForUser,
   filterCandidatePatch,
 } from "../utils/permissions.js";
+import { serializeCohort } from "./cohortService.js";
 
 async function assignSeat(cohort) {
   const taken = await Candidate.countDocuments({
@@ -121,6 +123,78 @@ export async function createCandidate(payload) {
   }
 }
 
+export async function createIntakeRosterCandidate(user, payload) {
+  if (!mongoose.isValidObjectId(payload.cohort_id)) {
+    throw new AppError("Cohort not found", 404, "NOT_FOUND");
+  }
+  await assertCohortAccess(user, payload.cohort_id);
+  const cohort = await Cohort.findById(payload.cohort_id);
+  if (!cohort) throw new AppError("Cohort not found", 404, "NOT_FOUND");
+  if (cohort.kind !== "institution") {
+    throw new AppError(
+      "Identity-only roster add is only for partner institution intakes",
+      400,
+      "NOT_INSTITUTION_INTAKE",
+    );
+  }
+
+  const seat = await assignSeat(cohort);
+  const seq = await nextCandidateSequence();
+  const candidate_code = formatCandidateCode(seq);
+
+  try {
+    const candidate = await Candidate.create({
+      cohort_id: cohort._id,
+      candidate_code,
+      full_name: payload.full_name,
+      national_id: payload.national_id,
+      phone: payload.phone,
+      gender: payload.gender ?? null,
+      district: payload.district ?? null,
+      date_of_birth: payload.date_of_birth ?? null,
+      email: payload.email || null,
+      status: payload.status ?? seat.status,
+      waitlist_position: payload.status === "enrolled" ? null : seat.waitlist_position,
+      training_status: "not_started",
+      driving_license_number: "N/A",
+      years_driving_experience: 0,
+      monthly_income_rwf: 0,
+      average_daily_earnings_rwf: 0,
+      deposit_available_rwf: 0,
+      preferred_term_years: 1,
+      marital_status: "unspecified",
+      applied_at: new Date(),
+    });
+
+    const json = toJSON(candidate);
+    json.cohort_id = String(json.cohort_id);
+    return json;
+  } catch (err) {
+    if (err.code === 11000) {
+      throw new AppError("This national ID is already in this intake.", 409, "DUPLICATE_APPLICATION");
+    }
+    throw new AppError(err.message, 400, "CANDIDATE_CREATE_FAILED");
+  }
+}
+
+export async function bulkCreateIntakeRoster(user, { cohort_id, candidates }) {
+  const created = [];
+  const errors = [];
+  for (let index = 0; index < candidates.length; index += 1) {
+    try {
+      const candidate = await createIntakeRosterCandidate(user, { ...candidates[index], cohort_id });
+      created.push(candidate);
+    } catch (err) {
+      errors.push({
+        index,
+        national_id: candidates[index].national_id,
+        message: err.message || "Could not add candidate",
+      });
+    }
+  }
+  return { created, errors };
+}
+
 export async function listCandidates(user, { cohortId } = {}) {
   const filter = await buildListFilter(user, { cohortId });
   if (filter.impossible) return [];
@@ -200,6 +274,24 @@ export async function listCandidatesSummary(user) {
     loan_review_status: c.loan_review_status,
     listed_on_crb: c.listed_on_crb,
   }));
+}
+
+export async function getCandidateForStaff(user, id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new AppError("Candidate not found", 404, "NOT_FOUND");
+  }
+  const candidate = await Candidate.findById(id);
+  if (!candidate) throw new AppError("Candidate not found", 404, "NOT_FOUND");
+  await assertCandidateAccess(user, candidate);
+
+  const json = toJSON(candidate);
+  json.cohort_id = json.cohort_id ? String(json.cohort_id) : null;
+
+  const cohortDoc = await Cohort.findById(candidate.cohort_id).populate({
+    path: "course_id",
+    select: "name code status",
+  });
+  return { candidate: json, cohort: serializeCohort(cohortDoc) };
 }
 
 const CANDIDATE_CODE_RE = /^UZA-\d{4}-\d{5}$/;

@@ -17,6 +17,19 @@ const cohortSchema = new mongoose.Schema(
       index: true,
     },
     notes: { type: String, default: null },
+    kind: {
+      type: String,
+      enum: ["uza", "institution"],
+      default: "uza",
+      index: true,
+    },
+    target_school_code: { type: String, default: null, trim: true, lowercase: true },
+    course_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      default: null,
+      index: true,
+    },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

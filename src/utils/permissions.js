@@ -65,6 +65,10 @@ export function canAccessTab(user, tab) {
   return false;
 }
 
+export function canWriteClassroom(user) {
+  return isAdmin(user) || isInstructor(user);
+}
+
 export function filterCandidatePatch(user, patch) {
   if (isAdmin(user)) return { ...patch };
 
