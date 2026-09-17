@@ -41,6 +41,7 @@ const DEFAULT_COHORTS = [
     applications_open: true,
     partner_bank: "Unguka Bank",
     notes: "Pre-qualified cohort for Unguka Bank financing.",
+    kind: "uza",
   },
   {
     name: "Tunga Taxi Cohort 2 — Kigali",
@@ -52,6 +53,7 @@ const DEFAULT_COHORTS = [
     applications_open: true,
     partner_bank: "Unguka Bank",
     notes: "Second intake, applications open.",
+    kind: "uza",
   },
   {
     name: "Tunga Taxi Cohort 3 — Musanze",
@@ -63,6 +65,7 @@ const DEFAULT_COHORTS = [
     applications_open: false,
     partner_bank: null,
     notes: "Upcountry pilot intake, opens later.",
+    kind: "uza",
   },
 ];
 
@@ -326,12 +329,33 @@ export async function seedIfEmpty() {
   }
   await seedStaffIfMissing(ungukaId);
   await seedCoursesIfEmpty();
+  await attachCoreCourseToUzaCohorts();
 
   if (ungukaId) {
     const consents = await seedConsentsForInstitution(ungukaId);
     if (consents > 0) {
       console.log(`Seeded ${consents} borrower–lender consent record(s) for Unguka Bank`);
     }
+  }
+}
+
+/** Attach the core programme to UZA teaching cohorts that still have no course. */
+export async function attachCoreCourseToUzaCohorts() {
+  const core = await Course.findOne({ code: "TT-EV-CORE" }).select("_id");
+  if (!core) return;
+
+  const result = await Cohort.updateMany(
+    {
+      $and: [
+        { $or: [{ course_id: null }, { course_id: { $exists: false } }] },
+        { $or: [{ kind: "uza" }, { kind: { $exists: false } }, { kind: null }] },
+      ],
+    },
+    { $set: { course_id: core._id, kind: "uza" } },
+  );
+
+  if (result.modifiedCount) {
+    console.log(`Attached TT-EV-CORE to ${result.modifiedCount} UZA cohort(s)`);
   }
 }
 

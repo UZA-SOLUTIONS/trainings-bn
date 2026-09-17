@@ -12,6 +12,7 @@ import institutionRoutes from "./routes/institutionRoutes.js";
 import lenderRoutes from "./routes/lenderRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import moduleRoutes from "./routes/moduleRoutes.js";
+import catalogueRoutes from "./routes/catalogueRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import bankWalletRoutes from "./routes/bankWalletRoutes.js";
 import garageRoutes from "./routes/garageRoutes.js";
@@ -101,6 +102,7 @@ export function createApp() {
   app.use("/api/candidates", candidateRoutes);
   app.use("/api/institutions", institutionRoutes);
   app.use("/api/financing/lenders", lenderRoutes);
+  app.use("/api/catalogue", catalogueRoutes);
   app.use("/api/courses", courseRoutes);
   app.use("/api/modules", moduleRoutes);
   app.use("/api/wallet", walletRoutes);

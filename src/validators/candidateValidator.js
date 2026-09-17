@@ -101,3 +101,22 @@ export const updateCandidateSchema = z.object({
   bank_notes: z.string().max(2000).optional().nullable(),
   target_vehicle_name: z.string().trim().max(160).optional().nullable(),
 });
+
+const identityRow = z.object({
+  full_name: z.string().trim().min(2).max(120),
+  national_id: z.string().trim().min(5).max(32),
+  phone: z.string().trim().min(9).max(20),
+  gender: z.string().trim().max(40).optional().nullable(),
+  district: z.string().trim().max(60).optional().nullable(),
+  date_of_birth: z.string().optional().nullable(),
+  email: z.string().trim().email().max(255).or(z.literal("")).optional().nullable(),
+});
+
+export const createIntakeRosterSchema = identityRow.extend({
+  cohort_id: objectId,
+});
+
+export const bulkCreateIntakeRosterSchema = z.object({
+  cohort_id: objectId,
+  candidates: z.array(identityRow).min(1).max(80),
+});
