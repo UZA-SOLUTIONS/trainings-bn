@@ -48,6 +48,7 @@ function serializeCourse(doc) {
 function identityRoster(doc) {
   const json = toJSON(doc);
   return {
+    candidate_code: json.candidate_code,
     full_name: json.full_name,
     national_id: json.national_id,
     phone: json.phone,
